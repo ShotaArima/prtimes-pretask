@@ -130,6 +130,16 @@ $container->set('helper', function ($c) {
             $all_comments = $options['all_comments'];
 
             $posts = [];
+            $in_query = ''; // post_idのIN句を作るための変数
+            foreach ($result as $post) {
+                $in_query .= $post['id'] . ',';
+            }
+            $in_query = rtrim($in_query, ',');
+            // 一度にコメント数を取得するためのクエリを作成
+            $comment_counts = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY `post_id`');
+            $comment_counts->execute();
+            $comment_counts = $comment_counts->fetchAll(PDO::FETCH_ASSOC);
+
             foreach ($results as $post) {
                 $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
                 $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
