@@ -131,17 +131,24 @@ $container->set('helper', function ($c) {
 
             $posts = [];
             $in_query = ''; // post_idのIN句を作るための変数
-            foreach ($result as $post) {
-                $in_query .= $post['id'] . ',';
+            foreach ($results as $post) {
+                $in_query .= (string)$post['id'] . ',';
             }
             $in_query = rtrim($in_query, ',');
             // 一度にコメント数を取得するためのクエリを作成
-            $comment_counts = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY `post_id`');
+            $comment_counts = $this->db()->prepare("SELECT post_id, COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY post_id");
             $comment_counts->execute();
             $comment_counts = $comment_counts->fetchAll(PDO::FETCH_ASSOC);
-
             foreach ($results as $post) {
-                $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
+                // $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
+                $post['comment_count'] = 0;
+                foreach($comment_counts as $comment) {
+                    if ($comment['post_id'] == $post['id']) {
+                        $post['comment_count'] = $comment['count'];
+                        break;
+                    }
+                }
+                
                 $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
                 if (!$all_comments) {
                     $query .= ' LIMIT 3';
