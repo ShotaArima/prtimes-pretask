@@ -179,22 +179,6 @@ $container->set('helper', function ($c) {
                     $post_comments = array_slice($post_comments, 0, 3);
                 }
 
-                $post_comments = [];
-                foreach ($comments as $comment) {
-                    if ($comment['post_id'] === $post['id']) {
-                        $user_id = $comment['user_id'];
-                        if (isset($user_map[$user_id])) {
-                            $comment['user'] = $user_map[$user_id];
-                        }
-                        $post_comments[] = $comment;
-                        
-                        // 指定された数のコメントに達したら終了
-                        if (count($post_comments) >= 3) {
-                            break;
-                        }
-                    }
-                }
-
 
                 // $ps = $this->db()->prepare($query);
                 // $ps->execute([$post['id']]);
