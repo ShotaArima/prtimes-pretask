@@ -137,36 +137,51 @@ $container->set('helper', function ($c) {
             // }
             // $in_query = rtrim($in_query, ',');
             $post_ids = array_column($results, 'id');
-            $in_query = implode(',', array_fill(0, count($post_ids), '?'));
+            $in_query = implode(',', $post_ids);
 
             // 一度にコメント数を取得
             $comment_counts = $this->db()->prepare("SELECT post_id, COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY post_id");
-            $comment_counts->execute($post_ids);
+            $comment_counts->execute();
             $comment_counts = $comment_counts->fetchAll(PDO::FETCH_KEY_PAIR);
 
             // 一度にコメントを取得
-            $limit = $all_comments ? '' : 'LIMIT ' . (POSTS_PER_PAGE * 3);
-            $comments_query = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC $limit");
-            $comments_query->execute($post_ids);
+            // $limit = $all_comments ? '' : 'LIMIT ' . (POSTS_PER_PAGE * 3);
+            $comments_query = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC");
+            $comments_query->execute();
 
             // $comments = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC");
             // $comments->execute();
             // $comments = $comments->fetchAll(PDO::FETCH_ASSOC);
 
-            while ($comment = $comments_query->fetch(PDO::FETCH_ASSOC)) {
+
+            // $comments_by_post = [];
+            // while ($comment = $comments_query->fetch(PDO::FETCH_ASSOC)) {
+            //     $post_id = $comment['post_id'];
+            //     // if (!isset($comments_by_post[$post_id])) {
+            //     //     $comments_by_post[$post_id] = [];
+            //     // }
+            //     // if (!$all_comments && count($comments_by_post[$post_id]) >= 3) {
+            //     //     continue;
+            //     // }
+            //     $comments_by_post[$post_id][] = $comment;
+            // }
+            $all_comments = $comments_query->fetchAll(PDO::FETCH_ASSOC);
+            // var_dump($all_comments);
+            // コメントを投稿IDごとに整理
+            $comments_by_post = [];
+            foreach ($all_comments as $comment) {
                 $post_id = $comment['post_id'];
                 if (!isset($comments_by_post[$post_id])) {
                     $comments_by_post[$post_id] = [];
                 }
-                if (!$all_comments && count($comments_by_post[$post_id]) >= 3) {
-                    continue;
+                if (!$all_comments || count($comments_by_post[$post_id]) < 3) {
+                    $comments_by_post[$post_id][] = $comment;
                 }
-                $comments_by_post[$post_id][] = $comment;
             }
 
             foreach ($results as $post) {
                 // $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
-                $post['comment_count'] = 0;
+                // $post['comment_count'] = 0;
                 // foreach($comment_counts as $comment) {
                 //     if ($comment['post_id'] == $post['id']) {
                 //         $post['comment_count'] = $comment['count'];
@@ -175,7 +190,9 @@ $container->set('helper', function ($c) {
                 // }
                 $post_id = $post['id'];
                 $post['comment_count'] = $comment_counts[$post_id] ?? 0;
-                $post['comments'] = $comments_by_post[$post_id] ?? []; 
+
+                $post['comments'] = isset($comments_by_post[$post_id]) ? $comments_by_post[$post_id] : [];
+                // var_dump($post['comments']);
                 // // foreach内でのクエリ実行時のソースコード
                 // $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
                 // if (!$all_comments) {
@@ -197,9 +214,9 @@ $container->set('helper', function ($c) {
                 // }
 
                 // $post_commentsの上位三件取得
-                // if (!$all_comments) {
-                //     $post_comments = array_slice($post_comments, 0, 3);
-                // }
+                if (!$all_comments) {
+                    $post['comments'] = array_slice($post['comments'], 0, 3);
+                }
                 // N+1問題
                 // $ps = $this->db()->prepare($query);
                 // $ps->execute([$post['id']]);
@@ -210,6 +227,7 @@ $container->set('helper', function ($c) {
                 // }
                 // unset($comment);
                 $post['comments'] = array_reverse($post['comments']);
+                // $post['comments'] = array_reverse($post['comments']);
 
                 $post['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $post['user_id']);
                 if ($post['user']['del_flg'] == 0) {
@@ -218,6 +236,13 @@ $container->set('helper', function ($c) {
                 if (count($posts) >= POSTS_PER_PAGE) {
                     break;
                 }
+            }
+
+            // デバッグ用
+            echo '<br>デバッグ用<br>';
+            foreach ($posts as $post) {
+                echo "投稿ID: {$post['id']}, コメント数: " . count($post['comments']) . "\n";
+                var_dump($post['comments']);
             }
             return $posts;
         }
