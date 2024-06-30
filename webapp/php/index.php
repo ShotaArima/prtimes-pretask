@@ -160,6 +160,12 @@ $container->set('helper', function ($c) {
                 }
             }
 
+            // postのユーザ情報を取得
+            $posts_user = $this->db()->prepare("SELECT * FROM `users` WHERE `id` IN ($in_query)");
+            $posts_user->execute();
+            $posts_user = $posts_user->fetchAll(PDO::FETCH_ASSOC);
+
+
             foreach ($results as $post) {
                 $post_id = $post['id'];
                 $post['comment_count'] = $comment_counts[$post_id] ?? 0;
@@ -173,7 +179,10 @@ $container->set('helper', function ($c) {
                 }
                 $post['comments'] = array_reverse($post['comments']);
 
-                $post['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $post['user_id']);
+                $user_id = $post['user_id'];
+                if (isset($posts_user[$user_id])) {
+                    $post['user'] = $posts_user[$user_id];
+                }
                 if ($post['user']['del_flg'] == 0) {
                     $posts[] = $post;
                 }
