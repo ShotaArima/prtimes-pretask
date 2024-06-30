@@ -149,22 +149,6 @@ $container->set('helper', function ($c) {
             $comments_query = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC");
             $comments_query->execute();
 
-            // $comments = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC");
-            // $comments->execute();
-            // $comments = $comments->fetchAll(PDO::FETCH_ASSOC);
-
-
-            // $comments_by_post = [];
-            // while ($comment = $comments_query->fetch(PDO::FETCH_ASSOC)) {
-            //     $post_id = $comment['post_id'];
-            //     // if (!isset($comments_by_post[$post_id])) {
-            //     //     $comments_by_post[$post_id] = [];
-            //     // }
-            //     // if (!$all_comments && count($comments_by_post[$post_id]) >= 3) {
-            //     //     continue;
-            //     // }
-            //     $comments_by_post[$post_id][] = $comment;
-            // }
             $all_comments = $comments_query->fetchAll(PDO::FETCH_ASSOC);
             // var_dump($all_comments);
             // コメントを投稿IDごとに整理
@@ -180,54 +164,17 @@ $container->set('helper', function ($c) {
             }
 
             foreach ($results as $post) {
-                // $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
-                // $post['comment_count'] = 0;
-                // foreach($comment_counts as $comment) {
-                //     if ($comment['post_id'] == $post['id']) {
-                //         $post['comment_count'] = $comment['count'];
-                //         break;
-                //     }
-                // }
                 $post_id = $post['id'];
                 $post['comment_count'] = $comment_counts[$post_id] ?? 0;
 
                 $post['comments'] = isset($comments_by_post[$post_id]) ? $comments_by_post[$post_id] : [];
-                // var_dump($post['comments']);
-                // // foreach内でのクエリ実行時のソースコード
-                // $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
-                // if (!$all_comments) {
-                //     $query .= ' LIMIT 3';
-                // }
-
-                // $post_comments = array();
-                // foreach ($comments as $comment) {
-                //     if ($comment['post_id'] === $post['id']) {
-                //         $post_comments[] = $comment;
-                //     }
-                // }
-
-                // foreach ($post_comments as $comment) {
-                //     $user_id = $comment['user_id'];
-                //     if (isset($user_map[$user_id])) {
-                //         $comment['user'] = $user_map[$user_id];
-                //     }
-                // }
+                
 
                 // $post_commentsの上位三件取得
                 if (!$all_comments) {
                     $post['comments'] = array_slice($post['comments'], 0, 3);
                 }
-                // N+1問題
-                // $ps = $this->db()->prepare($query);
-                // $ps->execute([$post['id']]);
-                // $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
-
-                // foreach ($posts as &$post) {
-                //     $comment['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $comment['user_id']);
-                // }
-                // unset($comment);
                 $post['comments'] = array_reverse($post['comments']);
-                // $post['comments'] = array_reverse($post['comments']);
 
                 $post['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $post['user_id']);
                 if ($post['user']['del_flg'] == 0) {
@@ -237,16 +184,9 @@ $container->set('helper', function ($c) {
                     break;
                 }
             }
-
-            // デバッグ用
-            echo '<br>デバッグ用<br>';
-            foreach ($posts as $post) {
-                echo "投稿ID: {$post['id']}, コメント数: " . count($post['comments']) . "\n";
-                var_dump($post['comments']);
-            }
+            // var_dump($posts);
             return $posts;
         }
-
     };
 });
 
