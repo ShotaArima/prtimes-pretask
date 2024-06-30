@@ -141,9 +141,9 @@ $container->set('helper', function ($c) {
             $comment_counts = $comment_counts->fetchAll(PDO::FETCH_ASSOC);
 
             // 一度にコメントを取得
-            $comments = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC");
-            $comments->execute();
-            $comments = $comments->fetchAll(PDO::FETCH_ASSOC);
+            // $comments = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC");
+            // $comments->execute();
+            // $comments = $comments->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($results as $post) {
                 // $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
@@ -154,10 +154,11 @@ $container->set('helper', function ($c) {
                         break;
                     }
                 }
-                // $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
-                // if (!$all_comments) {
-                //     $query .= ' LIMIT 3';
-                // }
+                // foreach内でのクエリ実行時のソースコード
+                $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
+                if (!$all_comments) {
+                    $query .= ' LIMIT 3';
+                }
 
                 $post_comments = array();
                 foreach ($comments as $comment) {
@@ -173,13 +174,13 @@ $container->set('helper', function ($c) {
                     }
                 }
 
-                // $post_commentsの上位三件取得
-                if (!$all_comments) {
-                    $post_comments = array_slice($post_comments, 0, 3);
-                }
-                // $ps = $this->db()->prepare($query);
-                // $ps->execute([$post['id']]);
-                // $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
+                // // $post_commentsの上位三件取得
+                // if (!$all_comments) {
+                //     $post_comments = array_slice($post_comments, 0, 3);
+                // }
+                $ps = $this->db()->prepare($query);
+                $ps->execute([$post['id']]);
+                $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
 
                 foreach ($comments as &$comment) {
                     $comment['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $comment['user_id']);
