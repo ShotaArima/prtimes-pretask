@@ -140,7 +140,7 @@ $container->set('helper', function ($c) {
             $comment_counts = $comment_counts->fetchAll(PDO::FETCH_KEY_PAIR);
 
             // 一度にコメントを取得
-            $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id, u.del_flg FROM `comments` c JOIN `users` u ON c.user_id = u.id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
+            $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id FROM `comments` c JOIN `users` u ON c.user_id = u.id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
             $comments_query->execute();
             $all_comments = $comments_query->fetchAll(PDO::FETCH_ASSOC);
 
