@@ -161,7 +161,7 @@ $container->set('helper', function ($c) {
             }
 
             // postのユーザ情報を取得
-            $posts_user = $this->db()->prepare("SELECT * FROM `users` WHERE `id` IN ($in_query)");
+            $posts_user = $this->db()->prepare("SELECT * FROM `users` WHERE `id` IN ($in_query) AND `del_flg` = 0");
             $posts_user->execute();
             $posts_user = $posts_user->fetchAll(PDO::FETCH_ASSOC);
 
