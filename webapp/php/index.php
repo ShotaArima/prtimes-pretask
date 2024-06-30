@@ -145,7 +145,6 @@ $container->set('helper', function ($c) {
             $comments->execute();
             $comments = $comments->fetchAll(PDO::FETCH_ASSOC);
 
-
             foreach ($results as $post) {
                 // $post['comment_count'] = $this->fetch_first('SELECT COUNT(*) AS `count` FROM `comments` WHERE `post_id` = ?', $post['id'])['count'];
                 $post['comment_count'] = 0;
@@ -155,7 +154,6 @@ $container->set('helper', function ($c) {
                         break;
                     }
                 }
-                
                 // $query = 'SELECT * FROM `comments` WHERE `post_id` = ? ORDER BY `created_at` DESC';
                 // if (!$all_comments) {
                 //     $query .= ' LIMIT 3';
@@ -167,6 +165,7 @@ $container->set('helper', function ($c) {
                         $post_comments[] = $comment;
                     }
                 }
+
                 foreach ($post_comments as $comment) {
                     $user_id = $comment['user_id'];
                     if (isset($user_map[$user_id])) {
@@ -178,8 +177,6 @@ $container->set('helper', function ($c) {
                 if (!$all_comments) {
                     $post_comments = array_slice($post_comments, 0, 3);
                 }
-
-
                 // $ps = $this->db()->prepare($query);
                 // $ps->execute([$post['id']]);
                 // $comments = $ps->fetchAll(PDO::FETCH_ASSOC);
