@@ -184,7 +184,6 @@ $container->set('helper', function ($c) {
                     break;
                 }
             }
-            // var_dump($posts);
             return $posts;
         }
     };
