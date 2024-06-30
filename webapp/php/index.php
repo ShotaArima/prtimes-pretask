@@ -138,30 +138,25 @@ $container->set('helper', function ($c) {
             $comment_counts = $this->db()->prepare("SELECT post_id, COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY post_id");
             $comment_counts->execute();
             $comment_counts = $comment_counts->fetchAll(PDO::FETCH_KEY_PAIR);
-            // var_dump($comment_counts);
+
 
             // 一度にコメントを取得
-            // $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id, cc.comment_count FROM `comments` c JOIN `users` u ON c.user_id = u.id JOIN ( SELECT post_id, COUNT(*) AS comment_count FROM `comments` WHERE post_id IN ($in_query) GROUP BY post_id ) cc ON c.post_id = cc.post_id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
             $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id FROM `comments` c JOIN `users` u ON c.user_id = u.id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
             $comments_query->execute();
             $all_comments = $comments_query->fetchAll(PDO::FETCH_ASSOC);
-            // var_dump($all_comments);
 
             // コメントを投稿IDごとに整理
             $comments_by_post = [];
-            // $comment_counts = [];
             foreach ($all_comments as $comment) {
                 $post_id = $comment['post_id'];
                 if (!isset($comments_by_post[$post_id])) {
                     $comments_by_post[$post_id] = [];
-                    // $comment_counts[$post_id] = $comment['comment_count'];
                 }
 
                 $comment['user'] = ['id' => $comment['user_id'], 'account_name' => $comment['account_name']];
                 unset($comment['account_name'], $comment['user_id']);
 
                 if (!$all_comments || count($comments_by_post[$post_id]) < 3) {
-                    // $comments_by_post[$comment_counts][] = count($comments_by_post[$post_id]);
                     $comments_by_post[$post_id][] = $comment;
                 }
             }
@@ -181,13 +176,8 @@ $container->set('helper', function ($c) {
                 if (!$all_comments) {
                     $post['comments'] = array_slice($post['comments'], -3);
                 }
-                // $post['comments'] = array_reverse($post['comments']);
-
                 $user_id = $post['user_id'];
                 $post['user'] = $posts_user[$user_id] ?? null;
-                // if (isset($posts_user[$user_id])) {
-                //     $post['user'] = $posts_user[$user_id];
-                // }
                 $posts[] = $post;
                 if (count($posts) >= POSTS_PER_PAGE) {
                     break;
