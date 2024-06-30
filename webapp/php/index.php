@@ -135,27 +135,32 @@ $container->set('helper', function ($c) {
             $in_query = implode(',', $post_ids);
 
             // 一度にコメント数を取得
-            $comment_counts = $this->db()->prepare("SELECT post_id, COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY post_id");
-            $comment_counts->execute();
-            $comment_counts = $comment_counts->fetchAll(PDO::FETCH_KEY_PAIR);
+            // $comment_counts = $this->db()->prepare("SELECT post_id, COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY post_id");
+            // $comment_counts->execute();
+            // $comment_counts = $comment_counts->fetchAll(PDO::FETCH_KEY_PAIR);
 
             // 一度にコメントを取得
-            $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id FROM `comments` c JOIN `users` u ON c.user_id = u.id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
+            $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id, COUNT(*) OVER (PARTITION BY c.post_id) AS comment_count FROM `comments` c JOIN `users` u ON c.user_id = u.id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
+            // $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id FROM `comments` c JOIN `users` u ON c.user_id = u.id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
             $comments_query->execute();
             $all_comments = $comments_query->fetchAll(PDO::FETCH_ASSOC);
+            // var_dump($all_comments);
 
             // コメントを投稿IDごとに整理
-            $comments_by_post = [];            
+            $comments_by_post = [];
+            $comment_counts = [];
             foreach ($all_comments as $comment) {
                 $post_id = $comment['post_id'];
                 if (!isset($comments_by_post[$post_id])) {
                     $comments_by_post[$post_id] = [];
+                    $comment_counts[$post_id] = $comment['comment_count'];
                 }
 
                 $comment['user'] = ['id' => $comment['user_id'], 'account_name' => $comment['account_name']];
                 unset($comment['account_name'], $comment['user_id']);
 
                 if (!$all_comments || count($comments_by_post[$post_id]) < 3) {
+                    // $comments_by_post[$comment_counts][] = count($comments_by_post[$post_id]);
                     $comments_by_post[$post_id][] = $comment;
                 }
             }
@@ -166,26 +171,31 @@ $container->set('helper', function ($c) {
             $posts_user = $posts_user->fetchAll(PDO::FETCH_ASSOC);
 
 
-            foreach ($results as $post) {
+            foreach ($results as &$post) {
                 $post_id = $post['id'];
-                $post['comment_count'] = $comment_counts[$post_id] ?? 0;
-
                 $post['comments'] = isset($comments_by_post[$post_id]) ? $comments_by_post[$post_id] : [];
+                $post['comment_count'] = $comment_counts[$post_id] ?? 0;
+                // $post['comment_count'] = $comments[$post_id] ?? 0;
+                // if (!empty($post_comments)) {
+                //     // コメントが存在する場合、最初のコメントの comment_count を使用
+                //     $post['comment_count'] = reset($post_comments)['comment_count'];
+                // } else {
+                //     // コメントが存在しない場合は0を設定
+                //     $post['comment_count'] = 0;
+                // }
                 
-
                 // $post_commentsの上位三件取得
                 if (!$all_comments) {
-                    $post['comments'] = array_slice($post['comments'], 0, 3);
+                    $post['comments'] = array_slice($post['comments'], -3);
                 }
-                $post['comments'] = array_reverse($post['comments']);
+                // $post['comments'] = array_reverse($post['comments']);
 
                 $user_id = $post['user_id'];
-                if (isset($posts_user[$user_id])) {
-                    $post['user'] = $posts_user[$user_id];
-                }
-                if ($post['user']['del_flg'] == 0) {
-                    $posts[] = $post;
-                }
+                $post['user'] = $posts_user[$user_id] ?? null;
+                // if (isset($posts_user[$user_id])) {
+                //     $post['user'] = $posts_user[$user_id];
+                // }
+                $posts[] = $post;
                 if (count($posts) >= POSTS_PER_PAGE) {
                     break;
                 }
