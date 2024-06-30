@@ -131,11 +131,6 @@ $container->set('helper', function ($c) {
 
             // post_idのIN句を作るための変数
             $posts = [];
-            // $in_query = ''; 
-            // foreach ($results as $post) {
-            //     $in_query .= (string)$post['id'] . ',';
-            // }
-            // $in_query = rtrim($in_query, ',');
             $post_ids = array_column($results, 'id');
             $in_query = implode(',', $post_ids);
 
@@ -145,19 +140,21 @@ $container->set('helper', function ($c) {
             $comment_counts = $comment_counts->fetchAll(PDO::FETCH_KEY_PAIR);
 
             // 一度にコメントを取得
-            // $limit = $all_comments ? '' : 'LIMIT ' . (POSTS_PER_PAGE * 3);
-            $comments_query = $this->db()->prepare("SELECT * FROM `comments` WHERE post_id IN ($in_query) ORDER BY `created_at` DESC");
+            $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id FROM `comments` c JOIN `users` u ON c.user_id = u.id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
             $comments_query->execute();
-
             $all_comments = $comments_query->fetchAll(PDO::FETCH_ASSOC);
-            // var_dump($all_comments);
+
             // コメントを投稿IDごとに整理
-            $comments_by_post = [];
+            $comments_by_post = [];            
             foreach ($all_comments as $comment) {
                 $post_id = $comment['post_id'];
                 if (!isset($comments_by_post[$post_id])) {
                     $comments_by_post[$post_id] = [];
                 }
+
+                $comment['user'] = ['id' => $comment['user_id'], 'account_name' => $comment['account_name']];
+                unset($comment['account_name'], $comment['user_id']);
+
                 if (!$all_comments || count($comments_by_post[$post_id]) < 3) {
                     $comments_by_post[$post_id][] = $comment;
                 }
