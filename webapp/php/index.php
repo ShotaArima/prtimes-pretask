@@ -138,7 +138,7 @@ $container->set('helper', function ($c) {
             $comment_counts = $this->db()->prepare("SELECT post_id, COUNT(*) AS `count` FROM `comments` WHERE post_id in ($in_query) GROUP BY post_id");
             $comment_counts->execute();
             $comment_counts = $comment_counts->fetchAll(PDO::FETCH_KEY_PAIR);
-            var_dump($comment_counts);
+            // var_dump($comment_counts);
 
             // 一度にコメントを取得
             // $comments_query = $this->db()->prepare("SELECT c.*, u.account_name, u.id AS user_id, cc.comment_count FROM `comments` c JOIN `users` u ON c.user_id = u.id JOIN ( SELECT post_id, COUNT(*) AS comment_count FROM `comments` WHERE post_id IN ($in_query) GROUP BY post_id ) cc ON c.post_id = cc.post_id WHERE c.post_id IN ($in_query) ORDER BY c.created_at DESC");
