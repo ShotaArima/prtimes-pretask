@@ -173,6 +173,7 @@ $container->set('helper', function ($c) {
                 }
                 $post['comments'] = array_reverse($post['comments']);
 
+                // 修正箇所
                 $post['user'] = $this->fetch_first('SELECT * FROM `users` WHERE `id` = ?', $post['user_id']);
                 if ($post['user']['del_flg'] == 0) {
                     $posts[] = $post;
